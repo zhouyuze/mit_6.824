@@ -59,7 +59,7 @@ func doMap(
 
 	file, err := os.Open(inFile)
 	if err == nil {
-		fmt.Printf("file:%s opened\n", inFile)
+		//fmt.Printf("file:%s opened\n", inFile)
 	} else {
 		fmt.Print(err)
 	}
@@ -79,8 +79,9 @@ func doMap(
 		file, err := os.Create(fileName)
 		if err != nil {
 			fmt.Printf("%s Create Failed\n", fileName)
+			return
 		} else {
-			fmt.Printf("%s Created\n", fileName)
+			//fmt.Printf("%s Created\n", fileName)
 			filesenc[i] = json.NewEncoder(file)
 		}
 	}
@@ -89,6 +90,7 @@ func doMap(
 		err := filesenc[ihash(v.Key)%nReduce].Encode(&v)
 		if err != nil {
 			fmt.Printf("%s Encode Failed %v\n", v, err)
+			return
 		}
 	}
 

@@ -53,10 +53,10 @@ func doReduce(
 	keyValues := make(map[string][]string)
 	for i := 0; i < nMap; i++ {
 		fileName := reduceName(jobName, i, reduceTaskNumber)
-		fmt.Print(fileName)
 		file, err := os.Open(fileName)
 		if err != nil {
 			fmt.Printf("reduce file:%s can't open\n", reduceName(jobName, i, reduceTaskNumber))
+			return
 		} else {
 			dec := json.NewDecoder(file)
 
