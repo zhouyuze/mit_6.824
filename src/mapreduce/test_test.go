@@ -137,7 +137,7 @@ func setup() *Master {
 }
 
 func cleanup(mr *Master) {
-	mr.CleanupFiles()
+	mr.cleanupFiles()
 	for _, f := range mr.files {
 		removeFile(f)
 	}
@@ -145,7 +145,7 @@ func cleanup(mr *Master) {
 
 func TestSequentialSingle(t *testing.T) {
 	mr := Sequential("test", makeInputs(1), 1, MapFunc, ReduceFunc)
-	mr.Wait()
+	mr.wait()
 	check(t, mr.files)
 	checkWorker(t, mr.stats)
 	cleanup(mr)
@@ -153,7 +153,7 @@ func TestSequentialSingle(t *testing.T) {
 
 func TestSequentialMany(t *testing.T) {
 	mr := Sequential("test", makeInputs(5), 3, MapFunc, ReduceFunc)
-	mr.Wait()
+	mr.wait()
 	check(t, mr.files)
 	checkWorker(t, mr.stats)
 	cleanup(mr)
@@ -165,7 +165,7 @@ func TestBasic(t *testing.T) {
 		go RunWorker(mr.address, port("worker"+strconv.Itoa(i)),
 			MapFunc, ReduceFunc, -1)
 	}
-	mr.Wait()
+	mr.wait()
 	check(t, mr.files)
 	checkWorker(t, mr.stats)
 	cleanup(mr)
@@ -178,7 +178,7 @@ func TestOneFailure(t *testing.T) {
 		MapFunc, ReduceFunc, 10)
 	go RunWorker(mr.address, port("worker"+strconv.Itoa(1)),
 		MapFunc, ReduceFunc, -1)
-	mr.Wait()
+	mr.wait()
 	check(t, mr.files)
 	checkWorker(t, mr.stats)
 	cleanup(mr)

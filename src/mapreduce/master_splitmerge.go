@@ -54,12 +54,12 @@ func (mr *Master) merge() {
 func removeFile(n string) {
 	err := os.Remove(n)
 	if err != nil {
-		log.Fatal("CleanupFiles ", err)
+		log.Fatal("cleanupFiles ", err)
 	}
 }
 
-// CleanupFiles removes all intermediate files produced by running mapreduce.
-func (mr *Master) CleanupFiles() {
+// cleanupFiles removes all intermediate files produced by running mapreduce.
+func (mr *Master) cleanupFiles() {
 	for i := range mr.files {
 		for j := 0; j < mr.nReduce; j++ {
 			removeFile(reduceName(mr.jobName, i, j))

@@ -89,7 +89,7 @@ func (mr *Master) forwardRegistrations(ch chan string) {
 		if len(mr.workers) > i {
 			// there's a worker that we haven't told schedule() about.
 			w := mr.workers[i]
-			go func() { ch <- w }() // send without holding the lock.
+			go func() { ch <- w }() // send without holding the lockLock.
 			i = i + 1
 		} else {
 			// wait for Register() to add an entry to workers[]
@@ -149,10 +149,10 @@ func (mr *Master) run(jobName string, files []string, nreduce int,
 	mr.doneChannel <- true
 }
 
-// Wait blocks until the currently scheduled work has completed.
+// wait blocks until the currently scheduled work has completed.
 // This happens when all tasks have scheduled and completed, the final output
 // have been computed, and all workers have been shut down.
-func (mr *Master) Wait() {
+func (mr *Master) wait() {
 	<-mr.doneChannel
 }
 
