@@ -92,7 +92,7 @@ func (mr *Master) forwardRegistrations(ch chan string) {
 			go func() { ch <- w }() // send without holding the lockLock.
 			i = i + 1
 		} else {
-			// wait for Register() to add an entry to workers[]
+			// Wait for Register() to add an entry to workers[]
 			// in response to an RPC from a new worker.
 			mr.newCond.Wait()
 		}
@@ -149,10 +149,10 @@ func (mr *Master) run(jobName string, files []string, nreduce int,
 	mr.doneChannel <- true
 }
 
-// wait blocks until the currently scheduled work has completed.
+// Wait blocks until the currently scheduled work has completed.
 // This happens when all tasks have scheduled and completed, the final output
 // have been computed, and all workers have been shut down.
-func (mr *Master) wait() {
+func (mr *Master) Wait() {
 	<-mr.doneChannel
 }
 
