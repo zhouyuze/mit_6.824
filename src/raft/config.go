@@ -424,7 +424,7 @@ func (cfg *config) one(cmd int, expectedServers int) int {
 				}
 				time.Sleep(20 * time.Millisecond)
 			}
-		} else {
+		}	else {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}

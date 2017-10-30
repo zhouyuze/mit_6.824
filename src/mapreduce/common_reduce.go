@@ -75,7 +75,7 @@ func doReduce(
 	for k, _ := range keyValues {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys) // 递增排序
+	sort.Strings(keys)
 
 	file, err := os.Create(mergeName(jobName, reduceTaskNumber))
 	if err != nil {
