@@ -36,7 +36,7 @@ const (
 	WAITINTERVAL = 150
 )
 
-const debugEnabled = true
+const debugEnabled = false
 
 // debug() will only print if debugEnabled is true
 func debug(format string, a ...interface{}) (n int, err error) {
@@ -189,17 +189,31 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	rf.chanHeartBeat <- true
 
-	if args.Entries == nil {
+	/*if args.Entries == nil {
 		reply.Success = true
-	} else if len(rf.log) > args.PrevLogIndex && rf.log[args.PrevLogIndex].Term == args.PrevLogTerm {
-		//debug("ZYZ- Follower %v: append %v to %v.\n", rf.me, args.Entries, rf.log[:args.PrevLogIndex+1])
-		rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...)
+	} else */
+	if len(rf.log) > args.PrevLogIndex && rf.log[args.PrevLogIndex].Term == args.PrevLogTerm {
+		if args.Entries != nil {
+			rf.log = append(rf.log[:args.PrevLogIndex+1], args.Entries...)
+			debug("ZYZ- Follower %v: append %v result %v.\n", rf.me, args.Entries, rf.log)
+		}
+
+		if rf.commitIndex < len(rf.log) - 1 && rf.commitIndex < args.LeaderCommit {
+			if args.LeaderCommit > len(rf.log)-1 {
+				rf.commitIndex = len(rf.log) - 1
+			} else {
+				rf.commitIndex = args.LeaderCommit
+			}
+			rf.chanCommit <- true
+			debug("ZYZ- Follower %d commitIndex %d\n", rf.me, rf.commitIndex)
+		}
+
 		reply.Success = true
 	} else {
 		reply.Success = false
 	}
 
-	if args.LeaderCommit > rf.commitIndex {
+	/*if args.PrevLogIndex < len(rf.log) && reply.Success && args.LeaderCommit > rf.commitIndex {
 		if args.LeaderCommit > len(rf.log) - 1 {
 			rf.commitIndex = len(rf.log) - 1
 		} else {
@@ -207,7 +221,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		}
 		rf.chanCommit <- true
 		debug("ZYZ- Follower %d commitIndex %d\n", rf.me, rf.commitIndex)
-	}
+	} */
 }
 
 func (rf *Raft) sendAppendEntries(server int) {
@@ -247,8 +261,8 @@ func (rf *Raft) sendAppendEntries(server int) {
 
 		if reply.Success {
 			if args.Entries != nil {
-				rf.matchIndex[server] += len(args.Entries)
-				rf.nextIndex[server] = rf.matchIndex[server] + 1
+				rf.nextIndex[server] += len(args.Entries)
+				rf.matchIndex[server] = rf.nextIndex[server] - 1
 			}
 		} else {
 			rf.nextIndex[server] -= 1
@@ -381,7 +395,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		rf.mu.Lock()
 		index = len(rf.log)
 		rf.log = append(rf.log, LogEntry{command, term})
-		rf.matchIndex[rf.me]++
+		rf.matchIndex[rf.me] = len(rf.log) - 1
 		rf.mu.Unlock()
 		debug("ZYZ- Leader %d update log %v\n", rf.me, rf.log)
 	}
@@ -434,17 +448,14 @@ func (rf *Raft) broadAppendEntry() {
 			break
 		}
 	}
-	var wg sync.WaitGroup
+
 	for i := range rf.peers {
 		if i != rf.me {
-			wg.Add(1)
 			go func(peer int) {
 				rf.sendAppendEntries(peer)
-				wg.Done()
 			}(i)
 		}
 	}
-	wg.Wait()
 }
 
 //
@@ -492,7 +503,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 				case <-rf.chanHeartBeat:
 				case <-rf.chanGrantVote:
 				case <-time.After(time.Duration(rand.Int()%(WAITINTERVAL * len(rf.peers)) + WAITINTERVAL) * time.Millisecond):
-					debug("ZYZ- Peer %d become Candidate. Term %v\n", rf.me, rf.currentTerm+1)
+					//debug("ZYZ- Peer %d become Candidate. Term %v\n", rf.me, rf.currentTerm+1)
 					rf.state = STATE_CANDIDATE
 				}
 
@@ -510,7 +521,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 					rf.votedFor = -1
 
 				case <-rf.chanLeader:
-					debug("ZYZ- Peer %d become Leader. Term %v\n", rf.me, rf.currentTerm)
+					debug("\nZYZ- Peer %d become Leader. Term %v\n", rf.me, rf.currentTerm)
 					rf.state = STATE_LEADER
 					for i := range rf.peers {
 						rf.nextIndex[i] = len(rf.log)
@@ -518,6 +529,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 					}
 
 				case <-time.After(time.Duration(WAITINTERVAL) * time.Millisecond):
+					//debug("ZYZ- Peer %d, not enough vote, Term +1 to %v\n", rf.me, rf.currentTerm+1)
 				}
 
 			case STATE_LEADER:
